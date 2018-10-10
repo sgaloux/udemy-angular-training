@@ -4,6 +4,8 @@ import { Exercice } from '../exercice.model';
 import { NgForm } from '@angular/forms';
 import { AngularFirestore } from 'angularfire2/firestore';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
 @Component({
   selector: 'app-new-training',
   templateUrl: './new-training.component.html',
@@ -11,14 +13,27 @@ import { Observable } from 'rxjs';
 })
 export class NewTrainingComponent implements OnInit {
   @Output()
-  exercices: Observable<any>;
+  exercices: Observable<Exercice[]>;
   constructor(
     private trainingService: TrainingService,
     private db: AngularFirestore
   ) {}
 
   ngOnInit() {
-    this.exercices = this.db.collection('availableExercices').valueChanges();
+    this.exercices = this.db
+      .collection('availableExercices')
+      .snapshotChanges()
+      .pipe(
+        map(docArray =>
+          docArray.map(
+            doc =>
+              ({
+                id: doc.payload.doc.id,
+                ...doc.payload.doc.data()
+              } as Exercice)
+          )
+        )
+      );
     // this.exercices = this.trainingService.getAvailableExercices();
   }
 
