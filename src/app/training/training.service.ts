@@ -27,21 +27,32 @@ export class TrainingService {
         .collection('availableExercices')
         .snapshotChanges()
         .pipe(
-          map(docArray =>
-            docArray.map(
+          map(docArray => {
+            return docArray.map(
               doc =>
                 ({
                   id: doc.payload.doc.id,
                   ...doc.payload.doc.data()
                 } as Exercice)
-            )
-          )
+            );
+          })
         )
-        .subscribe((ex: Exercice[]) => {
-          this.availableExercices = ex;
-          this.exercicesChanged.next([...this.availableExercices]);
-          this.uiService.loadingStateChanged.next(false);
-        })
+        .subscribe(
+          (ex: Exercice[]) => {
+            this.availableExercices = ex;
+            this.exercicesChanged.next([...this.availableExercices]);
+            this.uiService.loadingStateChanged.next(false);
+          },
+          error => {
+            this.uiService.loadingStateChanged.next(false);
+            this.uiService.showSnackbar(
+              'Fetching exercices failed, please try again later',
+              null,
+              3000
+            );
+            this.exerciceChanged.next(null);
+          }
+        )
     );
     return this.availableExercices.slice();
   }
