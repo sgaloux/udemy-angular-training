@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AngularFireModule } from 'angularfire2';
 import { AngularFirestoreModule } from 'angularfire2/firestore';
+import { StoreModule } from '@ngrx/store';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
@@ -15,6 +16,7 @@ import { UIService } from './shared/ui.service';
 import { AuthModule } from './auth/auth.module';
 import { WelcomeComponent } from './welcome/welcome.component';
 import { SharedModule } from './shared/shared.module';
+import { reducers } from './app.reducer';
 
 @NgModule({
   declarations: [
@@ -30,7 +32,8 @@ import { SharedModule } from './shared/shared.module';
     SharedModule,
     AngularFireModule.initializeApp(environment.firebase),
     AngularFirestoreModule,
-    AuthModule
+    AuthModule,
+    StoreModule.forRoot(reducers)
   ],
   providers: [AuthService, TrainingService, UIService],
   bootstrap: [AppComponent],
