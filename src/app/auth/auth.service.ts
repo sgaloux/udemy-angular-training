@@ -21,7 +21,7 @@ export class AuthService {
     private afAuth: AngularFireAuth,
     private trainingService: TrainingService,
     private uiService: UIService,
-    private store: Store<fromRoot.State>
+    private store: Store<fromRoot.ApplicationState>
   ) {}
 
   initAuthListener() {

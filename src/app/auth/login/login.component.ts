@@ -20,7 +20,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private uiService: UIService,
-    private store: Store<fromRoot.State>
+    private store: Store<fromRoot.ApplicationState>
   ) {}
 
   ngOnInit() {

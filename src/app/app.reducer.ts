@@ -5,11 +5,11 @@ import {
   createSelector
 } from '@ngrx/store';
 
-export interface State {
+export interface ApplicationState {
   ui: fromUi.State;
 }
 
-export const reducers: ActionReducerMap<State> = {
+export const reducers: ActionReducerMap<ApplicationState> = {
   ui: fromUi.uiReducer
 };
 
