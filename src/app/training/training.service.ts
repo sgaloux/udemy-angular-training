@@ -1,24 +1,22 @@
 import { Exercice } from './exercice.model';
-import { Subject, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from 'angularfire2/firestore';
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 import { UIService } from '../shared/ui.service';
 import * as fromRoot from '../app.reducer';
+import * as fromTraining from './training.reducer';
 import { Store } from '@ngrx/store';
 import { StartLoading, StopLoading } from '../shared/ui.actions';
+import {
+  SetAvailableTrainings,
+  SetFinishedTrainings,
+  StopTraining,
+  StartTraining
+} from './training.actions';
 
 @Injectable()
 export class TrainingService {
-  availableExercices: Exercice[] = [];
-
-  exerciceChanged = new Subject<Exercice>();
-  exercicesChanged = new Subject<Exercice[]>();
-  finishedExercicesChanged = new Subject<Exercice[]>();
-
-  private runningExercice: Exercice;
-  private exercices: Exercice[] = [];
-  private finishedExercices: Exercice[] = [];
   private fbSubs: Subscription[] = [];
 
   constructor(
@@ -27,7 +25,7 @@ export class TrainingService {
     private store: Store<fromRoot.ApplicationState>
   ) {}
 
-  fetchAvailableExercices(): any {
+  fetchAvailableExercices() {
     this.store.dispatch(new StartLoading());
     this.fbSubs.push(
       this.db
@@ -46,54 +44,53 @@ export class TrainingService {
         )
         .subscribe(
           (ex: Exercice[]) => {
-            this.availableExercices = ex;
-            this.exercicesChanged.next([...this.availableExercices]);
+            this.store.dispatch(new SetAvailableTrainings(ex));
             this.store.dispatch(new StopLoading());
           },
-          error => {
+          () => {
             this.store.dispatch(new StopLoading());
             this.uiService.showSnackbar(
               'Fetching exercices failed, please try again later',
               null,
               3000
             );
-            this.exerciceChanged.next(null);
           }
         )
     );
-    return this.availableExercices.slice();
   }
 
   startExercice(selectedId: string) {
-    const selectedEx = this.availableExercices.find(ex => ex.id === selectedId);
-    this.runningExercice = selectedEx;
-    this.exerciceChanged.next({ ...this.runningExercice });
+    this.store.dispatch(new StartTraining(selectedId));
   }
 
   completeExercice() {
-    this.addDataToDatabase({
-      ...this.runningExercice,
-      date: new Date(),
-      state: 'completed'
-    });
-    this.runningExercice = null;
-    this.exerciceChanged.next(null);
+    this.store
+      .select(fromTraining.getActiveTraining)
+      .pipe(take(1))
+      .subscribe(ex => {
+        this.addDataToDatabase({
+          ...ex,
+          date: new Date(),
+          state: 'completed'
+        });
+        this.store.dispatch(new StopTraining());
+      });
   }
 
   cancelExercice(progress: number) {
-    this.addDataToDatabase({
-      ...this.runningExercice,
-      duration: this.runningExercice.duration * (progress / 100),
-      calories: this.runningExercice.calories * (progress / 100),
-      date: new Date(),
-      state: 'cancelled'
-    });
-    this.runningExercice = null;
-    this.exerciceChanged.next(null);
-  }
-
-  getRunningExercice() {
-    return { ...this.runningExercice };
+    this.store
+      .select(fromTraining.getActiveTraining)
+      .pipe(take(1))
+      .subscribe(ex => {
+        this.addDataToDatabase({
+          ...ex,
+          duration: ex.duration * (progress / 100),
+          calories: ex.calories * (progress / 100),
+          date: new Date(),
+          state: 'cancelled'
+        });
+        this.store.dispatch(new StopTraining());
+      });
   }
 
   fetchCompletedOrCancelledExercices() {
@@ -102,7 +99,7 @@ export class TrainingService {
         .collection('finishedExercices')
         .valueChanges()
         .subscribe((exercices: Exercice[]) => {
-          this.finishedExercicesChanged.next(exercices);
+          this.store.dispatch(new SetFinishedTrainings(exercices));
         })
     );
   }

@@ -1,6 +1,3 @@
-import { Subject } from 'rxjs';
-
-import { User } from './user.model';
 import { AuthData } from './auth-data.model';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
